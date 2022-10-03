@@ -10,7 +10,7 @@ on:
 
 jobs:
   test_linux:
-    name: ${{ matrix.os }} (${{ matrix.browser }})
+    name: "Linux"
     strategy:
       fail-fast: false
       matrix:
@@ -28,3 +28,63 @@ jobs:
       run: pwsh bin\Debug\net6.0\playwright.ps1 install --with-deps
     - name: Run your tests
       run: dotnet test
+      
+  test_mac:
+    name: "Mac"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-11, macos-12]
+        browser: [chromium, firefox, webkit]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 14
+    - run: npm i -g npm@8
+    - run: npm ci
+      env:
+        DEBUG: pw:install
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+    - run: npm run build
+    - run: npx playwright install --with-deps ${{ matrix.browser }} chromium
+    - run: npm run test -- --project=${{ matrix.browser }}
+    - run: ./utils/upload_flakiness_dashboard.sh ./test-results/report.json
+      if: always()
+      shell: bash
+    - uses: actions/upload-artifact@v3
+      if: ${{ always() }}
+      with:
+        name: ${{ matrix.browser }}-${{ matrix.os }}-test-results
+        path: test-results
+
+  test_win:
+    name: "Windows"
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 14
+    - run: npm i -g npm@8
+    - run: npm ci
+      env:
+        DEBUG: pw:install
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+    - run: npm run build
+    - run: npx playwright install --with-deps ${{ matrix.browser }} chromium
+    - run: npm run test -- --project=${{ matrix.browser }}
+      shell: bash
+    - run: ./utils/upload_flakiness_dashboard.sh ./test-results/report.json
+      if: always()
+      shell: bash
+    - uses: actions/upload-artifact@v3
+      if: ${{ always() }}
+      with:
+        name: ${{ matrix.browser }}-win-test-results
+        path: test-results
