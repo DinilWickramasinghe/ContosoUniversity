@@ -8,11 +8,6 @@ on:
     branches:
       - main
 
-env:
-  # Force terminal colors. @see https://www.npmjs.com/package/colors
-  FORCE_COLOR: 1
-  FLAKINESS_CONNECTION_STRING: ${{ secrets.FLAKINESS_CONNECTION_STRING }}
-
 jobs:
   test_linux:
     name: ${{ matrix.os }} (${{ matrix.browser }})
